@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group - Photo Share</title>
+    <link rel="stylesheet" href="css/group.css">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="home.html" class="back-btn">← Back</a>
+        <h1 id="groupTitle"></h1>
+        <button id="addMemberBtn" class="btn-secondary">Add Member</button>
+    </nav>
+
+    <div class="container">
+        <!-- Add Member Modal -->
+        <div id="addMemberModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Add Member</h2>
+                <div class="form-group">
+                    <label for="memberUsername">Username</label>
+                    <input type="text" id="memberUsername">
+                </div>
+                <button id="confirmAddMember" class="btn-primary">Add</button>
+            </div>
+        </div>
+
+        <!-- Members Section -->
+        <div class="members-section">
+            <h3>Members</h3>
+            <div id="membersList"></div>
+        </div>
+
+        <!-- All Photos Section -->
+        <div class="photos-section">
+            <h3>All Photos</h3>
+            <div id="allPhotosContainer"></div>
+        </div>
+
+        <!-- Your Photos Section -->
+        <div class="photos-section">
+            <h3>Your Photos</h3>
+            <div id="yourPhotosContainer"></div>
+        </div>
+    </div>
+
+    <script src="js/group.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js');
+        }
+    </script>
+</body>
+
+</html>

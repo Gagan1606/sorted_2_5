@@ -1,0 +1,106 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
+    background: #0a0a0b;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.container {
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+}
+
+.form-card {
+    background: #18181b;
+    padding: 36px 32px;
+    border-radius: 16px;
+    border: 1px solid #27272a;
+}
+
+h1 {
+    text-align: center;
+    color: #fafafa;
+    margin-bottom: 32px;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    color: #a1a1aa;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid #3f3f46;
+    border-radius: 10px;
+    background: #27272a;
+    color: #fafafa;
+    font-size: 15px;
+    transition: border-color 0.2s;
+}
+
+input:focus {
+    outline: none;
+    border-color: #52525b;
+}
+
+input::placeholder {
+    color: #52525b;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 14px;
+    background: #fafafa;
+    color: #18181b;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary:hover {
+    background: #e4e4e7;
+}
+
+.btn-primary:active {
+    transform: scale(0.98);
+}
+
+.switch-form {
+    text-align: center;
+    margin-top: 24px;
+    color: #71717a;
+    font-size: 14px;
+}
+
+.switch-form a {
+    color: #fafafa;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.switch-form a:hover {
+    color: #a1a1aa;
+}
