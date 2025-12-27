@@ -335,6 +335,55 @@ document.getElementById('sharedByMeTab').addEventListener('click', () => {
 });
 
 // Load photos shared with current user
+// async function loadSharedWithMe() {
+//     try {
+//         const response = await fetch(`${API_BASE}/shared-with-me`, {
+//             credentials: 'include'
+//         });
+
+//         const data = await response.json();
+
+//         if (data.success) {
+//             const container = document.getElementById('sharedWithMePhotos');
+//             container.innerHTML = '';
+
+//             if (data.photos.length === 0) {
+//                 container.innerHTML = '<p class="empty-message">No photos shared with you yet</p>';
+//                 return;
+//             }
+
+//             data.photos.forEach(photo => {
+//                 const photoDiv = document.createElement('div');
+//                 photoDiv.className = 'photo-item' + (photo.viewed ? '' : ' unviewed');
+
+//                 const img = document.createElement('img');
+//                 img.src = `data:${photo.contentType};base64,${photo.photoData}`;
+//                 img.addEventListener('click', () => {
+//                     markAsViewed(photo._id);
+//                     // Open full size view
+//                     const fullView = window.open('', '_blank');
+//                     fullView.document.write(`<img src="${img.src}" style="max-width:100%;height:auto;">`);
+//                 });
+
+//                 const info = document.createElement('div');
+//                 info.className = 'photo-info';
+//                 info.innerHTML = `
+//                     <p><strong>From:</strong> ${photo.sharedBy}</p>
+//                     <p><strong>Date:</strong> ${new Date(photo.sharedAt).toLocaleDateString()}</p>
+//                     <p><strong>People:</strong> ${photo.detectedFaces.map(f => f.username).join(', ')}</p>
+//                     ${!photo.viewed ? '<span class="badge-new">NEW</span>' : ''}
+//                 `;
+
+//                 photoDiv.appendChild(img);
+//                 photoDiv.appendChild(info);
+//                 container.appendChild(photoDiv);
+//             });
+//         }
+//     } catch (error) {
+//         console.error('Error loading shared photos:', error);
+//         alert('Failed to load shared photos');
+//     }
+// }
 async function loadSharedWithMe() {
     try {
         const response = await fetch(`${API_BASE}/shared-with-me`, {
@@ -357,12 +406,15 @@ async function loadSharedWithMe() {
                 photoDiv.className = 'photo-item' + (photo.viewed ? '' : ' unviewed');
 
                 const img = document.createElement('img');
-                img.src = `data:${photo.contentType};base64,${photo.photoData}`;
+                // FIX: Use image endpoint
+                img.src = `${API_BASE}/shared-image/${photo._id}`;
+                img.loading = 'lazy';
+                
                 img.addEventListener('click', () => {
                     markAsViewed(photo._id);
                     // Open full size view
                     const fullView = window.open('', '_blank');
-                    fullView.document.write(`<img src="${img.src}" style="max-width:100%;height:auto;">`);
+                    fullView.document.write(`<img src="${API_BASE}/shared-image/${photo._id}" style="max-width:100%;height:auto;">`);
                 });
 
                 const info = document.createElement('div');
@@ -384,7 +436,6 @@ async function loadSharedWithMe() {
         alert('Failed to load shared photos');
     }
 }
-
 // Load photos shared by current user
 async function loadSharedByMe() {
     try {
@@ -408,10 +459,13 @@ async function loadSharedByMe() {
                 photoDiv.className = 'photo-item';
 
                 const img = document.createElement('img');
-                img.src = `data:${photo.contentType};base64,${photo.photoData}`;
+                // FIX: Use image endpoint
+                img.src = `${API_BASE}/shared-image/${photo._id}`;
+                img.loading = 'lazy';
+                
                 img.addEventListener('click', () => {
                     const fullView = window.open('', '_blank');
-                    fullView.document.write(`<img src="${img.src}" style="max-width:100%;height:auto;">`);
+                    fullView.document.write(`<img src="${API_BASE}/shared-image/${photo._id}" style="max-width:100%;height:auto;">`);
                 });
 
                 const info = document.createElement('div');
@@ -432,7 +486,6 @@ async function loadSharedByMe() {
         alert('Failed to load shared photos');
     }
 }
-
 // Mark photo as viewed
 async function markAsViewed(photoId) {
     try {

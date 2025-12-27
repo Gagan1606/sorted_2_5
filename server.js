@@ -942,6 +942,109 @@ app.post('/api/instant-share', requireAuth, upload.single('photo'), async (req, 
 });
 
 // Get photos shared WITH current user
+// app.get('/api/shared-with-me', requireAuth, async (req, res) => {
+//   try {
+//     const userId = req.session.userId;
+
+//     const sharedPhotos = await SharedPhoto.find({
+//       sharedWith: userId
+//     })
+//       .sort({ sharedAt: -1 })
+//       .populate('sharedBy', 'username')
+//       .populate('detectedFaces.user', 'username');
+
+//     const photosWithData = sharedPhotos.map(photo => ({
+//       _id: photo._id,
+//       photoData: photo.photoData.toString('base64'),
+//       contentType: photo.contentType,
+//       sharedBy: photo.sharedBy.username,
+//       sharedAt: photo.sharedAt,
+//       detectedFaces: photo.detectedFaces.map(f => ({
+//         username: f.user.username,
+//         confidence: f.confidence
+//       })),
+//       viewed: photo.viewed.some(v => v.user.toString() === userId.toString())
+//     }));
+
+//     res.json({
+//       success: true,
+//       photos: photosWithData,
+//       totalUnviewed: photosWithData.filter(p => !p.viewed).length
+//     });
+
+//   } catch (error) {
+//     res.status(500).json({ success: false, error: error.message });
+//   }
+// });
+
+// // Get photos shared BY current user
+// app.get('/api/shared-by-me', requireAuth, async (req, res) => {
+//   try {
+//     const userId = req.session.userId;
+
+//     const sharedPhotos = await SharedPhoto.find({
+//       sharedBy: userId
+//     })
+//       .sort({ sharedAt: -1 })
+//       .populate('sharedWith', 'username')
+//       .populate('detectedFaces.user', 'username');
+
+//     const photosWithData = sharedPhotos.map(photo => ({
+//       _id: photo._id,
+//       photoData: photo.photoData.toString('base64'),
+//       contentType: photo.contentType,
+//       sharedWith: photo.sharedWith.map(u => u.username),
+//       sharedAt: photo.sharedAt,
+//       detectedFaces: photo.detectedFaces.map(f => ({
+//         username: f.user.username,
+//         confidence: f.confidence
+//       })),
+//       viewCount: photo.viewed.length
+//     }));
+
+//     res.json({
+//       success: true,
+//       photos: photosWithData
+//     });
+
+//   } catch (error) {
+//     res.status(500).json({ success: false, error: error.message });
+//   }
+// });
+
+// Get photos shared WITH current user - ADD image endpoint for SharedPhoto
+app.get('/api/shared-image/:photoId', requireAuth, async (req, res) => {
+  try {
+    const { photoId } = req.params;
+    const { size = 'medium' } = req.query;
+    const userId = req.session.userId;
+
+    const photo = await SharedPhoto.findById(photoId);
+
+    if (!photo) {
+      return res.status(404).send('Not found');
+    }
+
+    // Authorization check - user must be sender or recipient
+    if (photo.sharedBy.toString() !== userId.toString() && 
+        !photo.sharedWith.includes(userId)) {
+      return res.status(403).send('Unauthorized');
+    }
+
+    // For now, SharedPhoto only has full quality
+    // You can add compression later
+    res.set({
+      'Content-Type': photo.contentType,
+      'Cache-Control': 'public, max-age=31536000'
+    });
+
+    res.send(photo.photoData);
+  } catch (error) {
+    res.status(500).send('Error loading image');
+  }
+});
+
+// Update shared-with-me endpoint - REMOVE base64
 app.get('/api/shared-with-me', requireAuth, async (req, res) => {
   try {
     const userId = req.session.userId;
@@ -955,7 +1058,7 @@ app.get('/api/shared-with-me', requireAuth, async (req, res) => {
 
     const photosWithData = sharedPhotos.map(photo => ({
       _id: photo._id,
-      photoData: photo.photoData.toString('base64'),
+      // REMOVED: photoData: photo.photoData.toString('base64'),
       contentType: photo.contentType,
       sharedBy: photo.sharedBy.username,
       sharedAt: photo.sharedAt,
@@ -977,7 +1080,7 @@ app.get('/api/shared-with-me', requireAuth, async (req, res) => {
   }
 });
 
-// Get photos shared BY current user
+// Update shared-by-me endpoint - REMOVE base64
 app.get('/api/shared-by-me', requireAuth, async (req, res) => {
   try {
     const userId = req.session.userId;
@@ -991,7 +1094,7 @@ app.get('/api/shared-by-me', requireAuth, async (req, res) => {
 
     const photosWithData = sharedPhotos.map(photo => ({
       _id: photo._id,
-      photoData: photo.photoData.toString('base64'),
+      // REMOVED: photoData: photo.photoData.toString('base64'),
       contentType: photo.contentType,
       sharedWith: photo.sharedWith.map(u => u.username),
       sharedAt: photo.sharedAt,
@@ -1011,7 +1114,6 @@ app.get('/api/shared-by-me', requireAuth, async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
-
 // Mark photo as viewed
 app.post('/api/mark-viewed/:photoId', requireAuth, async (req, res) => {
   try {

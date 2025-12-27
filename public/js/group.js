@@ -11,13 +11,13 @@ async function loadGroup() {
         const response = await fetch(`${API_BASE}/group/${groupId}`, {
             credentials: 'include'
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             currentGroup = data.group;
             document.getElementById('groupTitle').textContent = currentGroup.groupName;
-            
+
             displayMembers(currentGroup.members);
             displayAllPhotos(data.allPhotos);
             displayUserPhotos(data.userPhotos);
@@ -34,7 +34,7 @@ async function loadGroup() {
 function displayMembers(members) {
     const membersList = document.getElementById('membersList');
     membersList.innerHTML = '';
-    
+
     members.forEach(member => {
         const tag = document.createElement('div');
         tag.className = 'member-tag';
@@ -43,10 +43,61 @@ function displayMembers(members) {
     });
 }
 
+// function displayAllPhotos(photos) {
+//     const container = document.getElementById('allPhotosContainer');
+//     container.innerHTML = '';
+
+//     // Group by date
+//     const photosByDate = {};
+//     photos.forEach(photo => {
+//         const date = new Date(photo.capturedAt).toLocaleDateString();
+//         if (!photosByDate[date]) {
+//             photosByDate[date] = [];
+//         }
+//         photosByDate[date].push(photo);
+//     });
+
+//     // Display grouped photos
+//     Object.keys(photosByDate).sort().reverse().forEach(date => {
+//         const dateGroup = document.createElement('div');
+//         dateGroup.className = 'date-group';
+
+//         const dateHeader = document.createElement('div');
+//         dateHeader.className = 'date-header';
+//         dateHeader.textContent = date;
+//         dateGroup.appendChild(dateHeader);
+
+//         const photoGrid = document.createElement('div');
+//         photoGrid.className = 'photo-grid';
+
+//         photosByDate[date].forEach(photo => {
+//             const photoItem = document.createElement('div');
+//             photoItem.className = 'photo-item';
+
+//             const img = document.createElement('img');
+//             img.src = `data:${photo.contentType};base64,${photo.photoData}`;
+
+//             const photoInfo = document.createElement('div');
+//             photoInfo.className = 'photo-info';
+
+//             const faces = photo.detectedFaces.map(f => f.username).join(', ');
+//             photoInfo.innerHTML = `
+//                 <div class="photo-faces">People: ${faces || 'None'}</div>
+//             `;
+
+//             photoItem.appendChild(img);
+//             photoItem.appendChild(photoInfo);
+//             photoGrid.appendChild(photoItem);
+//         });
+
+//         dateGroup.appendChild(photoGrid);
+//         container.appendChild(dateGroup);
+//     });
+// }
 function displayAllPhotos(photos) {
     const container = document.getElementById('allPhotosContainer');
     container.innerHTML = '';
-    
+
     // Group by date
     const photosByDate = {};
     photos.forEach(photo => {
@@ -56,44 +107,89 @@ function displayAllPhotos(photos) {
         }
         photosByDate[date].push(photo);
     });
-    
+
     // Display grouped photos
     Object.keys(photosByDate).sort().reverse().forEach(date => {
         const dateGroup = document.createElement('div');
         dateGroup.className = 'date-group';
-        
+
         const dateHeader = document.createElement('div');
         dateHeader.className = 'date-header';
         dateHeader.textContent = date;
         dateGroup.appendChild(dateHeader);
-        
+
         const photoGrid = document.createElement('div');
         photoGrid.className = 'photo-grid';
-        
+
         photosByDate[date].forEach(photo => {
             const photoItem = document.createElement('div');
             photoItem.className = 'photo-item';
-            
+
             const img = document.createElement('img');
-            img.src = `data:${photo.contentType};base64,${photo.photoData}`;
-            
+            // FIX: Use image endpoint instead of base64
+            img.src = `${API_BASE}/image/${photo._id}?size=thumb`;
+            img.loading = 'lazy';
+
+            // Preload medium quality
+            const mediumImg = new Image();
+            mediumImg.onload = () => {
+                img.src = `${API_BASE}/image/${photo._id}?size=medium`;
+            };
+            mediumImg.src = `${API_BASE}/image/${photo._id}?size=medium`;
+
+            // Full quality on click
+            img.addEventListener('click', () => {
+                const fullView = window.open('', '_blank');
+                fullView.document.write(`
+                    <img src="${API_BASE}/image/${photo._id}?size=full" 
+                         style="max-width:100%;height:auto;">
+                `);
+            });
+
             const photoInfo = document.createElement('div');
             photoInfo.className = 'photo-info';
-            
+
             const faces = photo.detectedFaces.map(f => f.username).join(', ');
             photoInfo.innerHTML = `
                 <div class="photo-faces">People: ${faces || 'None'}</div>
             `;
-            
+
             photoItem.appendChild(img);
             photoItem.appendChild(photoInfo);
             photoGrid.appendChild(photoItem);
         });
-        
+
         dateGroup.appendChild(photoGrid);
         container.appendChild(dateGroup);
     });
 }
+// function displayUserPhotos(photos) {
+//     const container = document.getElementById('yourPhotosContainer');
+//     container.innerHTML = '';
+
+//     if (photos.length === 0) {
+//         container.innerHTML = '<p>No photos of you in this group</p>';
+//         return;
+//     }
+
+//     const photoGrid = document.createElement('div');
+//     photoGrid.className = 'photo-grid';
+
+//     photos.forEach(photo => {
+//         const photoItem = document.createElement('div');
+//         photoItem.className = 'photo-item';
+
+//         const img = document.createElement('img');
+//         img.src = `data:${photo.contentType};base64,${photo.photoData}`;
+
+//         photoItem.appendChild(img);
+//         photoGrid.appendChild(photoItem);
+//     });
+
+//     container.appendChild(photoGrid);
+// }
+
+// Add Member Modal
 
 function displayUserPhotos(photos) {
     const container = document.getElementById('yourPhotosContainer');
@@ -112,7 +208,18 @@ function displayUserPhotos(photos) {
         photoItem.className = 'photo-item';
         
         const img = document.createElement('img');
-        img.src = `data:${photo.contentType};base64,${photo.photoData}`;
+        // FIX: Use image endpoint
+        img.src = `${API_BASE}/image/${photo._id}?size=medium`;
+        img.loading = 'lazy';
+        
+        // Full quality on click
+        img.addEventListener('click', () => {
+            const fullView = window.open('', '_blank');
+            fullView.document.write(`
+                <img src="${API_BASE}/image/${photo._id}?size=full" 
+                     style="max-width:100%;height:auto;">
+            `);
+        });
         
         photoItem.appendChild(img);
         photoGrid.appendChild(photoItem);
@@ -120,8 +227,6 @@ function displayUserPhotos(photos) {
     
     container.appendChild(photoGrid);
 }
-
-// Add Member Modal
 const addMemberModal = document.getElementById('addMemberModal');
 
 document.getElementById('addMemberBtn').addEventListener('click', () => {
@@ -134,12 +239,12 @@ document.querySelector('.close').addEventListener('click', () => {
 
 document.getElementById('confirmAddMember').addEventListener('click', async () => {
     const username = document.getElementById('memberUsername').value;
-    
+
     if (!username) {
         alert('Please enter a username');
         return;
     }
-    
+
     try {
         const response = await fetch(`${API_BASE}/add-member-to-group`, {
             method: 'POST',
@@ -147,9 +252,9 @@ document.getElementById('confirmAddMember').addEventListener('click', async () =
             body: JSON.stringify({ groupId, username }),
             credentials: 'include'
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             alert('Member added successfully');
             addMemberModal.style.display = 'none';
