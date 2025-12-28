@@ -148,82 +148,82 @@ document.querySelectorAll('.close').forEach(closeBtn => {
 //         progressDiv.textContent = '';
 //     }
 // });
-document.getElementById('createGroupForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
+// document.getElementById('createGroupForm').addEventListener('submit', async (e) => {
+//     e.preventDefault();
 
-    const groupName = document.getElementById('groupName').value;
-    const startTime = document.getElementById('startTime').value;
-    const endTime = document.getElementById('endTime').value;
-    const photos = document.getElementById('groupPhotos').files;
+//     const groupName = document.getElementById('groupName').value;
+//     const startTime = document.getElementById('startTime').value;
+//     const endTime = document.getElementById('endTime').value;
+//     const photos = document.getElementById('groupPhotos').files;
 
-    // Validate: either time range OR manual photos
-    if (!startTime && !endTime && photos.length === 0) {
-        alert('Please provide either a time range or select photos manually');
-        return;
-    }
+//     // Validate: either time range OR manual photos
+//     if (!startTime && !endTime && photos.length === 0) {
+//         alert('Please provide either a time range or select photos manually');
+//         return;
+//     }
 
-    const formData = new FormData();
-    formData.append('groupName', groupName);
+//     const formData = new FormData();
+//     formData.append('groupName', groupName);
 
-    if (startTime && endTime) {
-        formData.append('startTime', startTime);
-        formData.append('endTime', endTime);
-        formData.append('autoSelect', 'true');
-    }
+//     if (startTime && endTime) {
+//         formData.append('startTime', startTime);
+//         formData.append('endTime', endTime);
+//         formData.append('autoSelect', 'true');
+//     }
 
-    // Add manual photos if provided
-    for (let photo of photos) {
-        formData.append('photos', photo);
-    }
+//     // Add manual photos if provided
+//     for (let photo of photos) {
+//         formData.append('photos', photo);
+//     }
 
-    const progressDiv = document.getElementById('upload-progress');
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.textContent = '⏳ Creating...';
+//     const progressDiv = document.getElementById('upload-progress');
+//     const submitBtn = e.target.querySelector('button[type="submit"]');
+//     submitBtn.disabled = true;
+//     submitBtn.textContent = '⏳ Creating...';
     
-    const photoCount = (startTime && endTime) ? 'photos in time range' : `${photos.length} photo(s)`;
-    progressDiv.innerHTML = `
-        <div class="loading-spinner">
-            <p>📄 Processing ${photoCount}...</p>
-            <p>⏱️ This may take 30-60 seconds</p>
-            <p style="font-size: 12px; color: #888;">Detecting faces and removing duplicates...</p>
-        </div>
-    `;
+//     const photoCount = (startTime && endTime) ? 'photos in time range' : `${photos.length} photo(s)`;
+//     progressDiv.innerHTML = `
+//         <div class="loading-spinner">
+//             <p>📄 Processing ${photoCount}...</p>
+//             <p>⏱️ This may take 30-60 seconds</p>
+//             <p style="font-size: 12px; color: #888;">Detecting faces and removing duplicates...</p>
+//         </div>
+//     `;
 
-    try {
-        const response = await fetch(`${API_BASE}/create-group`, {
-            method: 'POST',
-            body: formData,
-            credentials: 'include'
-        });
+//     try {
+//         const response = await fetch(`${API_BASE}/create-group`, {
+//             method: 'POST',
+//             body: formData,
+//             credentials: 'include'
+//         });
 
-        const data = await response.json();
+//         const data = await response.json();
 
-        if (data.success) {
-            detectedUsersData = data.detectedUsers;
-            pendingGroupData = { groupId: data.groupId, groupName };
+//         if (data.success) {
+//             detectedUsersData = data.detectedUsers;
+//             pendingGroupData = { groupId: data.groupId, groupName };
 
-            document.getElementById('createGroupForm').style.display = 'none';
-            progressDiv.style.display = 'none';
+//             document.getElementById('createGroupForm').style.display = 'none';
+//             progressDiv.style.display = 'none';
 
-            const detectedSection = document.getElementById('detectedUsersSection');
-            detectedSection.style.display = 'block';
+//             const detectedSection = document.getElementById('detectedUsersSection');
+//             detectedSection.style.display = 'block';
 
-            displayDetectedUsers();
-        } else {
-            alert(data.error || 'Failed to create group');
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Create Group';
-            progressDiv.textContent = '';
-        }
-    } catch (error) {
-        console.error('Create group error:', error);
-        alert('Failed to create group');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Create Group';
-        progressDiv.textContent = '';
-    }
-});
+//             displayDetectedUsers();
+//         } else {
+//             alert(data.error || 'Failed to create group');
+//             submitBtn.disabled = false;
+//             submitBtn.textContent = 'Create Group';
+//             progressDiv.textContent = '';
+//         }
+//     } catch (error) {
+//         console.error('Create group error:', error);
+//         alert('Failed to create group');
+//         submitBtn.disabled = false;
+//         submitBtn.textContent = 'Create Group';
+//         progressDiv.textContent = '';
+//     }
+// });
 
 function displayDetectedUsers() {
     const listDiv = document.getElementById('detectedUsersList');
@@ -524,41 +524,41 @@ document.getElementById('createGroupForm').addEventListener('submit', async (e) 
     }
 });
 // Then in form submit, filter photos by time:
-async function getPhotosInTimeRange(startTime, endTime) {
-    if (!selectedFolder) {
-        alert('Please select a folder first');
-        return [];
-    }
+// async function getPhotosInTimeRange(startTime, endTime) {
+//     if (!selectedFolder) {
+//         alert('Please select a folder first');
+//         return [];
+//     }
 
-    const photos = [];
-    const startDate = new Date(startTime);
-    const endDate = new Date(endTime);
+//     const photos = [];
+//     const startDate = new Date(startTime);
+//     const endDate = new Date(endTime);
 
-    for await (const entry of selectedFolder.values()) {
-        if (entry.kind === 'file' && entry.name.match(/\.(jpg|jpeg|png|heic)$/i)) {
-            const file = await entry.getFile();
-            const fileDate = new Date(file.lastModified);
+//     for await (const entry of selectedFolder.values()) {
+//         if (entry.kind === 'file' && entry.name.match(/\.(jpg|jpeg|png|heic)$/i)) {
+//             const file = await entry.getFile();
+//             const fileDate = new Date(file.lastModified);
 
-            if (fileDate >= startDate && fileDate <= endDate) {
-                photos.push(file);
-            }
-        }
-    }
+//             if (fileDate >= startDate && fileDate <= endDate) {
+//                 photos.push(file);
+//             }
+//         }
+//     }
 
-    return photos;
-}
+//     return photos;
+// }
 
-// Update form submit:
-if (startTime && endTime) {
-    const autoPhotos = await getPhotosInTimeRange(startTime, endTime);
-    if (autoPhotos.length === 0) {
-        alert('No photos found in this time range');
-        return;
-    }
-    for (let photo of autoPhotos) {
-        formData.append('photos', photo);
-    }
-}
+// // Update form submit:
+// if (startTime && endTime) {
+//     const autoPhotos = await getPhotosInTimeRange(startTime, endTime);
+//     if (autoPhotos.length === 0) {
+//         alert('No photos found in this time range');
+//         return;
+//     }
+//     for (let photo of autoPhotos) {
+//         formData.append('photos', photo);
+//     }
+// }
 
 // Load and display groups
 document.getElementById('viewGroupsBtn').addEventListener('click', loadGroups);
