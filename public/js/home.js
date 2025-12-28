@@ -35,6 +35,9 @@ window.dismissInstall = function () {
 let currentUser = null;
 let detectedUsersData = [];
 let pendingGroupData = null;
+// Add at the top with other variables
+let selectedFolder = null;
+
 
 // Check authentication
 async function checkAuth() {
@@ -84,20 +87,91 @@ document.querySelectorAll('.close').forEach(closeBtn => {
 });
 
 // Create Group Form
+// document.getElementById('createGroupForm').addEventListener('submit', async (e) => {
+//     e.preventDefault();
+
+//     const groupName = document.getElementById('groupName').value;
+//     const photos = document.getElementById('groupPhotos').files;
+
+//     if (photos.length === 0) {
+//         alert('Please select photos');
+//         return;
+//     }
+
+//     const formData = new FormData();
+//     formData.append('groupName', groupName);
+
+//     for (let photo of photos) {
+//         formData.append('photos', photo);
+//     }
+
+//     const progressDiv = document.getElementById('upload-progress');
+//     const submitBtn = e.target.querySelector('button[type="submit"]');
+//     submitBtn.disabled = true;
+//     submitBtn.textContent = '⏳ Creating...';
+//     progressDiv.innerHTML = `
+//         <div class="loading-spinner">
+//             <p>🔄 Uploading ${photos.length} photo(s)...</p>
+//             <p>⏱️ This may take 30-60 seconds</p>
+//             <p style="font-size: 12px; color: #888;">Detecting faces and removing duplicates...</p>
+//         </div>
+//     `;
+
+//     try {
+//         const response = await fetch(`${API_BASE}/create-group`, {
+//             method: 'POST',
+//             body: formData,
+//             credentials: 'include'
+//         });
+
+//         const data = await response.json();
+
+//         if (data.success) {
+//             // FIX 2: Show detected users for confirmation
+//             detectedUsersData = data.detectedUsers;
+//             pendingGroupData = { groupId: data.groupId, groupName };
+
+//             document.getElementById('createGroupForm').style.display = 'none';
+//             progressDiv.style.display = 'none';
+
+//             const detectedSection = document.getElementById('detectedUsersSection');
+//             detectedSection.style.display = 'block';
+
+//             displayDetectedUsers();
+//         } else {
+//             alert(data.error || 'Failed to create group');
+//             progressDiv.textContent = '';
+//         }
+//     } catch (error) {
+//         console.error('Create group error:', error);
+//         alert('Failed to create group');
+//         progressDiv.textContent = '';
+//     }
+// });
 document.getElementById('createGroupForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const groupName = document.getElementById('groupName').value;
+    const startTime = document.getElementById('startTime').value;
+    const endTime = document.getElementById('endTime').value;
     const photos = document.getElementById('groupPhotos').files;
 
-    if (photos.length === 0) {
-        alert('Please select photos');
+    // Validate: either time range OR manual photos
+    if (!startTime && !endTime && photos.length === 0) {
+        alert('Please provide either a time range or select photos manually');
         return;
     }
 
     const formData = new FormData();
     formData.append('groupName', groupName);
 
+    if (startTime && endTime) {
+        formData.append('startTime', startTime);
+        formData.append('endTime', endTime);
+        formData.append('autoSelect', 'true');
+    }
+
+    // Add manual photos if provided
     for (let photo of photos) {
         formData.append('photos', photo);
     }
@@ -106,9 +180,11 @@ document.getElementById('createGroupForm').addEventListener('submit', async (e) 
     const submitBtn = e.target.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
     submitBtn.textContent = '⏳ Creating...';
+    
+    const photoCount = (startTime && endTime) ? 'photos in time range' : `${photos.length} photo(s)`;
     progressDiv.innerHTML = `
         <div class="loading-spinner">
-            <p>🔄 Uploading ${photos.length} photo(s)...</p>
+            <p>📄 Processing ${photoCount}...</p>
             <p>⏱️ This may take 30-60 seconds</p>
             <p style="font-size: 12px; color: #888;">Detecting faces and removing duplicates...</p>
         </div>
@@ -124,7 +200,6 @@ document.getElementById('createGroupForm').addEventListener('submit', async (e) 
         const data = await response.json();
 
         if (data.success) {
-            // FIX 2: Show detected users for confirmation
             detectedUsersData = data.detectedUsers;
             pendingGroupData = { groupId: data.groupId, groupName };
 
@@ -137,11 +212,15 @@ document.getElementById('createGroupForm').addEventListener('submit', async (e) 
             displayDetectedUsers();
         } else {
             alert(data.error || 'Failed to create group');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Group';
             progressDiv.textContent = '';
         }
     } catch (error) {
         console.error('Create group error:', error);
         alert('Failed to create group');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Group';
         progressDiv.textContent = '';
     }
 });
@@ -264,6 +343,222 @@ document.getElementById('instantShareForm').addEventListener('submit', async (e)
         resultDiv.innerHTML = '<p class="error-message">❌ Failed to share photo. Please try again.</p>';
     }
 });
+
+
+// Folder selection handler
+document.getElementById('selectFolderBtn').addEventListener('click', async () => {
+    try {
+        // Check if File System Access API is supported
+        if (!('showDirectoryPicker' in window)) {
+            alert('❌ Your browser doesn\'t support automatic folder selection. Please use Chrome or Edge.\n\nAlternative: You can manually select photos instead.');
+            return;
+        }
+
+        selectedFolder = await window.showDirectoryPicker();
+        document.getElementById('folderStatus').innerHTML = `✅ Selected: <strong>${selectedFolder.name}</strong>`;
+        document.getElementById('folderStatus').style.color = '#10b981';
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            // User cancelled - no error needed
+            return;
+        }
+        console.error('Folder selection error:', error);
+        alert('Failed to select folder. Please try again.');
+    }
+});
+
+// Helper function to get photos in time range
+async function getPhotosInTimeRange(startTime, endTime) {
+    if (!selectedFolder) {
+        alert('⚠️ Please select a photo folder first');
+        throw new Error('No folder selected');
+    }
+
+    const photos = [];
+    const startDate = new Date(startTime);
+    const endDate = new Date(endTime);
+    
+    const progressDiv = document.getElementById('upload-progress');
+    progressDiv.innerHTML = '<p>🔍 Scanning folder for photos in time range...</p>';
+
+    try {
+        // Recursively scan folder (including subfolders)
+        async function scanFolder(dirHandle, path = '') {
+            for await (const entry of dirHandle.values()) {
+                if (entry.kind === 'file') {
+                    // Check if it's an image file
+                    if (entry.name.match(/\.(jpg|jpeg|png|heic|heif|webp)$/i)) {
+                        try {
+                            const file = await entry.getFile();
+                            const fileDate = new Date(file.lastModified);
+
+                            // Check if file is in time range
+                            if (fileDate >= startDate && fileDate <= endDate) {
+                                photos.push(file);
+                                progressDiv.innerHTML = `<p>🔍 Found ${photos.length} photos so far...</p>`;
+                            }
+                        } catch (err) {
+                            console.warn(`Skipping file ${entry.name}:`, err);
+                        }
+                    }
+                } else if (entry.kind === 'directory') {
+                    // Recursively scan subdirectories
+                    await scanFolder(entry, path + entry.name + '/');
+                }
+            }
+        }
+
+        await scanFolder(selectedFolder);
+
+    } catch (error) {
+        console.error('Error scanning folder:', error);
+        throw error;
+    }
+
+    return photos;
+}
+
+// Create Group Form - COMPLETE REPLACEMENT
+document.getElementById('createGroupForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const groupName = document.getElementById('groupName').value;
+    const startTime = document.getElementById('startTime').value;
+    const endTime = document.getElementById('endTime').value;
+
+    // Validate inputs
+    if (!startTime || !endTime) {
+        alert('⚠️ Please select both start and end times');
+        return;
+    }
+
+    if (new Date(startTime) >= new Date(endTime)) {
+        alert('⚠️ End time must be after start time');
+        return;
+    }
+
+    if (!selectedFolder) {
+        alert('⚠️ Please select a photo folder first');
+        return;
+    }
+
+    const progressDiv = document.getElementById('upload-progress');
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = '⏳ Scanning...';
+
+    try {
+        // Get photos in time range
+        progressDiv.innerHTML = '<p>🔍 Scanning folder for photos...</p>';
+        const photos = await getPhotosInTimeRange(startTime, endTime);
+
+        if (photos.length === 0) {
+            alert(`❌ No photos found between:\n${new Date(startTime).toLocaleString()} and ${new Date(endTime).toLocaleString()}\n\nTry a different time range.`);
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Group';
+            progressDiv.innerHTML = '';
+            return;
+        }
+
+        // Limit to 50 photos (adjust as needed)
+        if (photos.length > 50) {
+            const proceed = confirm(`Found ${photos.length} photos. Only the first 50 will be uploaded to avoid server overload. Continue?`);
+            if (!proceed) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Group';
+                progressDiv.innerHTML = '';
+                return;
+            }
+        }
+
+        const photosToUpload = photos.slice(0, 50);
+
+        // Create FormData
+        const formData = new FormData();
+        formData.append('groupName', groupName);
+
+        for (let photo of photosToUpload) {
+            formData.append('photos', photo);
+        }
+
+        submitBtn.textContent = '⏳ Uploading...';
+        progressDiv.innerHTML = `
+            <div class="loading-spinner">
+                <p>📤 Uploading ${photosToUpload.length} photo(s)...</p>
+                <p>⏱️ This may take 30-90 seconds</p>
+                <p style="font-size: 12px; color: #888;">Detecting faces and removing duplicates...</p>
+            </div>
+        `;
+
+        const response = await fetch(`${API_BASE}/create-group`, {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            detectedUsersData = data.detectedUsers;
+            pendingGroupData = { groupId: data.groupId, groupName };
+
+            document.getElementById('createGroupForm').style.display = 'none';
+            progressDiv.style.display = 'none';
+
+            const detectedSection = document.getElementById('detectedUsersSection');
+            detectedSection.style.display = 'block';
+
+            displayDetectedUsers();
+        } else {
+            alert(data.error || 'Failed to create group');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Group';
+            progressDiv.innerHTML = '';
+        }
+    } catch (error) {
+        console.error('Create group error:', error);
+        alert('Failed to create group: ' + error.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Group';
+        progressDiv.innerHTML = '';
+    }
+});
+// Then in form submit, filter photos by time:
+async function getPhotosInTimeRange(startTime, endTime) {
+    if (!selectedFolder) {
+        alert('Please select a folder first');
+        return [];
+    }
+
+    const photos = [];
+    const startDate = new Date(startTime);
+    const endDate = new Date(endTime);
+
+    for await (const entry of selectedFolder.values()) {
+        if (entry.kind === 'file' && entry.name.match(/\.(jpg|jpeg|png|heic)$/i)) {
+            const file = await entry.getFile();
+            const fileDate = new Date(file.lastModified);
+
+            if (fileDate >= startDate && fileDate <= endDate) {
+                photos.push(file);
+            }
+        }
+    }
+
+    return photos;
+}
+
+// Update form submit:
+if (startTime && endTime) {
+    const autoPhotos = await getPhotosInTimeRange(startTime, endTime);
+    if (autoPhotos.length === 0) {
+        alert('No photos found in this time range');
+        return;
+    }
+    for (let photo of autoPhotos) {
+        formData.append('photos', photo);
+    }
+}
 
 // Load and display groups
 document.getElementById('viewGroupsBtn').addEventListener('click', loadGroups);
