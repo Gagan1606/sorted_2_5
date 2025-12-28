@@ -227,3 +227,15 @@ input:focus {
 input::placeholder {
     color: #52525b;
 }
+.dev-banner {
+  background: #18181b;
+  color: #fafafa;
+  text-align: center;
+  padding: 12px 20px;
+  font-weight: 500;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  border-bottom: 1px solid #27272a;
+}
