@@ -12,9 +12,6 @@
     <link rel="apple-touch-icon" href="/icon-192.png">
 </head>
 
-<body>
-    <div class="dev-banner">Under development: things may be slow, ideas are fast, please hang tight :]</div>
-
     <body>
         <div class="dev-banner">Under development: things may be slow, ideas are fast, please hang tight :)</div>
 
@@ -56,22 +53,30 @@
                                 <input type="text" id="groupName" required>
                             </div>
 
+                            <!-- Automatic Selection -->
                             <div class="form-group">
-                                <label>Select Photo Folder</label>
-                                <button type="button" id="selectFolderBtn" class="btn-secondary">📁 Choose
-                                    Folder</button>
+                                <label>📁 Automatic Selection (Recommended)</label>
+                                <button type="button" id="selectFolderBtn" class="btn-secondary">Choose Folder</button>
                                 <div id="folderStatus" style="margin-top: 8px; font-size: 14px; color: #888;">No folder
                                     selected</div>
                             </div>
 
                             <div class="form-group">
-                                <label for="startTime">Event Start Date & Time</label>
-                                <input type="datetime-local" id="startTime" required>
+                                <label for="startTime">Start Date & Time</label>
+                                <input type="datetime-local" id="startTime">
                             </div>
 
                             <div class="form-group">
-                                <label for="endTime">Event End Date & Time</label>
-                                <input type="datetime-local" id="endTime" required>
+                                <label for="endTime">End Date & Time</label>
+                                <input type="datetime-local" id="endTime">
+                            </div>
+
+                            <!-- Manual Selection -->
+                            <div class="form-group"
+                                style="border-top: 1px solid #e4e4e7; padding-top: 20px; margin-top: 20px;">
+                                <label for="groupPhotos">📷 Or Manual Selection</label>
+                                <input type="file" id="groupPhotos" accept="image/*" multiple>
+                                <small>Select photos manually if automatic doesn't work</small>
                             </div>
 
                             <div id="upload-progress"></div>

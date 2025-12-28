@@ -425,55 +425,71 @@ document.getElementById('createGroupForm').addEventListener('submit', async (e) 
     const groupName = document.getElementById('groupName').value;
     const startTime = document.getElementById('startTime').value;
     const endTime = document.getElementById('endTime').value;
+    const manualPhotos = document.getElementById('groupPhotos').files;
 
-    // Validate inputs
-    if (!startTime || !endTime) {
-        alert('⚠️ Please select both start and end times');
+    // Validate: need either (folder + time range) OR manual photos
+    const hasAutomatic = selectedFolder && startTime && endTime;
+    const hasManual = manualPhotos.length > 0;
+
+    if (!hasAutomatic && !hasManual) {
+        alert('⚠️ Please either:\n1. Select folder + time range, OR\n2. Manually select photos');
         return;
     }
 
-    if (new Date(startTime) >= new Date(endTime)) {
+    if (startTime && endTime && new Date(startTime) >= new Date(endTime)) {
         alert('⚠️ End time must be after start time');
-        return;
-    }
-
-    if (!selectedFolder) {
-        alert('⚠️ Please select a photo folder first');
         return;
     }
 
     const progressDiv = document.getElementById('upload-progress');
     const submitBtn = e.target.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
-    submitBtn.textContent = '⏳ Scanning...';
+    submitBtn.textContent = '⏳ Processing...';
 
     try {
-        // Get photos in time range
-        progressDiv.innerHTML = '<p>🔍 Scanning folder for photos...</p>';
-        const photos = await getPhotosInTimeRange(startTime, endTime);
+        let photosToUpload = [];
 
-        if (photos.length === 0) {
-            alert(`❌ No photos found between:\n${new Date(startTime).toLocaleString()} and ${new Date(endTime).toLocaleString()}\n\nTry a different time range.`);
+        // Try automatic selection first
+        if (hasAutomatic) {
+            progressDiv.innerHTML = '<p>🔍 Scanning folder for photos...</p>';
+            const autoPhotos = await getPhotosInTimeRange(startTime, endTime);
+            
+            if (autoPhotos.length > 0) {
+                photosToUpload = autoPhotos;
+                progressDiv.innerHTML = `<p>✅ Found ${autoPhotos.length} photos automatically</p>`;
+            } else {
+                alert('⚠️ No photos found in time range. Using manual selection instead.');
+            }
+        }
+
+        // Fallback to manual selection
+        if (photosToUpload.length === 0 && hasManual) {
+            photosToUpload = Array.from(manualPhotos);
+            progressDiv.innerHTML = `<p>📷 Using ${photosToUpload.length} manually selected photos</p>`;
+        }
+
+        // Final check
+        if (photosToUpload.length === 0) {
+            alert('❌ No photos to upload');
             submitBtn.disabled = false;
             submitBtn.textContent = 'Create Group';
             progressDiv.innerHTML = '';
             return;
         }
 
-        // Limit to 50 photos (adjust as needed)
-        if (photos.length > 50) {
-            const proceed = confirm(`Found ${photos.length} photos. Only the first 50 will be uploaded to avoid server overload. Continue?`);
+        // Limit to 50 photos
+        if (photosToUpload.length > 50) {
+            const proceed = confirm(`Found ${photosToUpload.length} photos. Only the first 50 will be uploaded. Continue?`);
             if (!proceed) {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Create Group';
                 progressDiv.innerHTML = '';
                 return;
             }
+            photosToUpload = photosToUpload.slice(0, 50);
         }
 
-        const photosToUpload = photos.slice(0, 50);
-
-        // Create FormData
+        // Upload photos
         const formData = new FormData();
         formData.append('groupName', groupName);
 
@@ -522,8 +538,7 @@ document.getElementById('createGroupForm').addEventListener('submit', async (e) 
         submitBtn.textContent = 'Create Group';
         progressDiv.innerHTML = '';
     }
-});
-// Then in form submit, filter photos by time:
+});// Then in form submit, filter photos by time:
 // async function getPhotosInTimeRange(startTime, endTime) {
 //     if (!selectedFolder) {
 //         alert('Please select a folder first');
